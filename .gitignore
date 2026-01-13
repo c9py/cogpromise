@@ -3,3 +3,7 @@ a.out
 **/.DS_Store
 include/continuable
 include/function2
+test/test_main
+test/test_tensor_logic
+test/test_comparison
+test/test_compile_duration

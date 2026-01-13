@@ -10,6 +10,38 @@ Why use Minicoros over Continuables? Minicoros is much friendlier to the compile
 
 Unfortunately there's no support for C++20 coroutines yet, but that will be added.
 
+## Tensor Logic Extension
+
+This library now includes a comprehensive **Tensor Logic** implementation that bridges neural and symbolic AI. Tensor Logic represents logical rules as tensor equations, enabling:
+
+- **Symbolic reasoning** through tensor operations
+- **Neural-symbolic integration** via embedding spaces
+- **Temperature-based reasoning** (deterministic ↔ probabilistic)
+- **Asynchronous inference** using the future/promise framework
+
+See [TENSOR_LOGIC.md](TENSOR_LOGIC.md) for detailed documentation and examples.
+
+Quick example:
+```cpp
+#include <minicoros/tensor_logic.h>
+
+using namespace mc::tensor_logic;
+
+// Create knowledge base
+knowledge_base<double> kb;
+tensor<double> parent({3, 3}, parent_data);
+kb.add_predicate("parent", parent);
+
+// Infer grandparent rule: grandparent(X,Z) :- parent(X,Y), parent(Y,Z)
+reasoning_engine<double> engine;
+engine.infer(kb, "parent", "parent")
+  .then([](tensor<double> grandparent) -> mc::result<void> {
+    // Use inferred grandparent relation
+    return {};
+  })
+  .done([](auto) {});
+```
+
 ## Examples
 ```cpp
 mc::future<int> sum1(int o1, int o2) {
