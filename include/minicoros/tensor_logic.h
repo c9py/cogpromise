@@ -54,7 +54,16 @@ public:
   
   /// Create a tensor from existing data
   tensor(const MINICOROS_STD::vector<size_t>& dims, const MINICOROS_STD::vector<T>& data)
-    : dimensions_(dims), data_(data) {}
+    : dimensions_(dims), data_(data) {
+    // Validate data size matches dimensions
+    size_t expected_size = 1;
+    for (auto dim : dims) {
+      expected_size *= dim;
+    }
+    if (data.size() != expected_size) {
+      data_.resize(expected_size);
+    }
+  }
   
   /// Get dimensions
   const MINICOROS_STD::vector<size_t>& dimensions() const { return dimensions_; }
@@ -88,11 +97,16 @@ public:
   
 private:
   size_t flatten_index(const MINICOROS_STD::vector<size_t>& indices) const {
+    if (dimensions_.empty()) {
+      return 0;
+    }
+    
     size_t flat_idx = 0;
     size_t stride = 1;
-    for (int i = dimensions_.size() - 1; i >= 0; --i) {
-      flat_idx += indices[i] * stride;
-      stride *= dimensions_[i];
+    // Use size_t for loop counter to match dimensions_.size() type
+    for (size_t i = dimensions_.size(); i > 0; --i) {
+      flat_idx += indices[i - 1] * stride;
+      stride *= dimensions_[i - 1];
     }
     return flat_idx;
   }
@@ -221,6 +235,15 @@ tensor<T> add(const tensor<T>& a, const tensor<T>& b) {
 /// Apply softmax for probabilistic reasoning
 template<typename T>
 tensor<T> softmax(const tensor<T>& input, T temperature = T(1.0)) {
+  if (input.size() == 0) {
+    return tensor<T>();
+  }
+  
+  // Avoid division by zero
+  if (temperature <= T(0)) {
+    temperature = T(0.001);  // Use small positive value
+  }
+  
   tensor<T> result(input.dimensions());
   
   // Find max for numerical stability
@@ -240,8 +263,10 @@ tensor<T> softmax(const tensor<T>& input, T temperature = T(1.0)) {
   }
   
   // Normalize
-  for (size_t i = 0; i < result.size(); ++i) {
-    result[i] /= sum;
+  if (sum > T{}) {
+    for (size_t i = 0; i < result.size(); ++i) {
+      result[i] /= sum;
+    }
   }
   
   return result;
@@ -342,11 +367,14 @@ public:
   explicit embedding_space(size_t dimension) : dimension_(dimension) {}
   
   /// Add an entity with its embedding vector
-  void add_entity(const MINICOROS_STD::string& entity_name, 
+  /// Returns true if entity was added, false if dimension mismatch
+  bool add_entity(const MINICOROS_STD::string& entity_name, 
                   const MINICOROS_STD::vector<T>& embedding) {
     if (embedding.size() == dimension_) {
       embeddings_[entity_name] = embedding;
+      return true;
     }
+    return false;
   }
   
   /// Get embedding for an entity
