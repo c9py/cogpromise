@@ -7,3 +7,4 @@ test/test_main
 test/test_tensor_logic
 test/test_comparison
 test/test_compile_duration
+examples/tensor_logic_demo
